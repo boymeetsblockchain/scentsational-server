@@ -11,6 +11,8 @@ export const configValidationSchema = z.object({
     (a) => parseInt(z.string().parse(a), 10),
     z.number().default(3000),
   ),
+
+  DATABASE_URL: z.string().url(),
 });
 
 export type Config = z.infer<typeof configValidationSchema>;

@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { configValidationSchema } from './configs/validation/validation.schema';
 import * as z from 'zod';
 import { ConfigModule } from '@nestjs/config';
+import { PrismaModule } from './modules/global/prisma/prisma.module';
 
 function validate(config: Record<string, unknown>) {
   try {
@@ -24,6 +25,7 @@ function validate(config: Record<string, unknown>) {
       envFilePath: '.env',
       validate: validate,
     }),
+    PrismaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
