@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: scentsational
+      POSTGRES_PASSWORD: scentsational
+      POSTGRES_DB: scentsational
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - '6677:5432'
+
+volumes:
+  postgres_data:
