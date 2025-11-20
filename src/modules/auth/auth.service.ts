@@ -7,6 +7,7 @@ import { generateRandomString } from '../global/utils/text';
 import * as ms from 'ms';
 import * as bcrypt from 'bcrypt';
 import { UserToken } from 'generated/prisma/browser';
+import { AuthRegisterDto } from './dtos/auth.register.dto';
 
 @Injectable()
 export class AuthService {
@@ -128,5 +129,5 @@ export class AuthService {
 
   // register
 
-  async register() {}
+  async register(input: AuthRegisterDto) {}
 }
