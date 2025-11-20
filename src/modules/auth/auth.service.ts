@@ -125,4 +125,8 @@ export class AuthService {
       throw new BadRequestException('Invalid token');
     }
   }
+
+  // register
+
+  async register() {}
 }
