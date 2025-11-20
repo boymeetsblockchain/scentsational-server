@@ -129,5 +129,99 @@ export class AuthService {
 
   // register
 
-  async register(input: AuthRegisterDto) {}
+  async register(input: AuthRegisterDto) {
+    const existingUser = await this.prismaClient.user.findFirst({
+      where: {
+        OR: [{ email: input.email }, { phoneNumber: input.phoneNumber }],
+      },
+    });
+
+    if (existingUser) {
+      // More specific error message
+      if (existingUser.email === input.email) {
+        throw new BadRequestException('Email already in use');
+      } else {
+        throw new BadRequestException('Phone number already in use');
+      }
+    }
+
+    const hashedPassword = await this.authUtil.hashPassword(input.password);
+
+    const user = await this.prismaClient.user.create({
+      data: {
+        email: input.email,
+        phoneCountryCode: input.phoneCountryCode,
+        phoneNumber: input.phoneNumber,
+        password: hashedPassword,
+        firstName: input.firstName,
+        middleName: input.middleName,
+        lastName: input.lastName,
+        displayName:
+          input.displayName || `${input.firstName} ${input.lastName}`.trim(),
+        lastLoginAt: new Date(),
+        gender: input.gender,
+        dateOfBirth: input.dateOfBirth ? new Date(input.dateOfBirth) : null,
+        acceptsMarketing: input.acceptsMarketing ?? false,
+        newsletterSubscribed: input.newsletterSubscribed ?? false,
+        emailNotifications: input.emailNotifications ?? true,
+        smsNotifications: input.smsNotifications ?? false,
+      },
+    });
+
+    const { __access, __refresh } = this._generateAuthTokenPairs(
+      user.id,
+      user.type,
+    );
+
+    // Remove password from response
+    const { password, ...userWithoutPassword } = user;
+
+    return {
+      user: userWithoutPassword,
+      tokens: {
+        accessToken: __access,
+        refreshToken: __refresh,
+      },
+    };
+  }
+
+  async login(email: string, password: string) {
+    const user = await this.prismaClient.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Invalid credentials');
+    }
+
+    const isPasswordValid = await this.authUtil.verifyPassword(
+      password,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new BadRequestException('Invalid credentials');
+    }
+
+    // Update last login
+    await this.prismaClient.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+
+    const { __access, __refresh } = this._generateAuthTokenPairs(
+      user.id,
+      user.type,
+    );
+
+    const { password: _, ...userWithoutPassword } = user;
+
+    return {
+      user: userWithoutPassword,
+      tokens: {
+        accessToken: __access,
+        refreshToken: __refresh,
+      },
+    };
+  }
 }

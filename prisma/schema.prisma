@@ -37,7 +37,7 @@ model User {
   email            String  @unique
   emailVerified    Boolean @default(false)
   phoneCountryCode String
-  phoneNumber      String
+  phoneNumber      String  @unique
   phoneVerified    Boolean @default(false)
   password         String
 
