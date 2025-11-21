@@ -8,6 +8,7 @@ import * as ms from 'ms';
 import * as bcrypt from 'bcrypt';
 import { UserToken } from 'generated/prisma/browser';
 import { AuthRegisterDto } from './dtos/auth.register.dto';
+import { AuthLoginDto } from './dtos/auth.login.dto';
 
 @Injectable()
 export class AuthService {
@@ -173,9 +174,9 @@ export class AuthService {
       user.type,
     );
 
-    // Remove password from response
     const { password, ...userWithoutPassword } = user;
 
+    void password;
     return {
       user: userWithoutPassword,
       tokens: {
@@ -185,9 +186,9 @@ export class AuthService {
     };
   }
 
-  async login(email: string, password: string) {
+  async login(input: AuthLoginDto) {
     const user = await this.prismaClient.user.findUnique({
-      where: { email },
+      where: { email: input.email },
     });
 
     if (!user) {
@@ -195,7 +196,7 @@ export class AuthService {
     }
 
     const isPasswordValid = await this.authUtil.verifyPassword(
-      password,
+      input.password,
       user.password,
     );
 
