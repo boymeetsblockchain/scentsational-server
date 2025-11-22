@@ -6,7 +6,7 @@ import { CONFIGS } from 'src/configs';
 import { generateRandomString } from '../global/utils/text';
 import * as ms from 'ms';
 import * as bcrypt from 'bcrypt';
-import { UserToken } from 'generated/prisma/browser';
+import { User, UserToken } from 'generated/prisma/browser';
 import { AuthRegisterDto } from './dtos/auth.register.dto';
 import { AuthLoginDto } from './dtos/auth.login.dto';
 
@@ -169,6 +169,17 @@ export class AuthService {
       },
     });
 
+    const { token } = await this._createToken({
+      userId: user.id,
+      tokenType: 'verify_email',
+      characterType: 'numeric',
+      length: 4,
+      expiration: ms('1h'),
+      deleteExistingTokens: true,
+    });
+
+    console.log(`Email verification token for user ${user.id}: ${token}`);
+
     const { __access, __refresh } = this._generateAuthTokenPairs(
       user.id,
       user.type,
@@ -223,6 +234,31 @@ export class AuthService {
         accessToken: __access,
         refreshToken: __refresh,
       },
+    };
+  }
+
+  async requestVerifyEmail(user: Pick<User, 'id'>) {
+    const isEmailVerified = await this.prismaClient.user.findUnique({
+      where: { id: user.id },
+      select: { emailVerified: true },
+    });
+
+    if (isEmailVerified?.emailVerified)
+      throw new BadRequestException('Email is already verified');
+
+    const { token } = await this._createToken({
+      userId: user.id,
+      tokenType: 'verify_email',
+      characterType: 'numeric',
+      length: 4,
+      expiration: ms('1h'),
+      deleteExistingTokens: true,
+    });
+
+    console.log(`Email verification token for user ${user.id}: ${token}`);
+
+    return {
+      token,
     };
   }
 }
