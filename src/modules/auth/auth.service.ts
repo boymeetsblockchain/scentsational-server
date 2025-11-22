@@ -10,6 +10,10 @@ import { User, UserToken } from 'generated/prisma/browser';
 import { AuthRegisterDto } from './dtos/auth.register.dto';
 import { AuthLoginDto } from './dtos/auth.login.dto';
 import { AuthVerifyEmailDto } from './dtos/auth.verify-email.dto';
+import { AuthForgotPasswordDto } from './dtos/auth.forgot-password.dto';
+import { AuthResetPasswordDto } from './dtos/auth.reset-password.dto';
+import { AuthChangePasswordDto } from './dtos/auth.change-password.dto';
+import { AuthRefreshDto } from './dtos/auth.refresh-token.dto';
 
 @Injectable()
 export class AuthService {
@@ -285,5 +289,143 @@ export class AuthService {
     return {
       message: 'Email verified successfully',
     };
+  }
+
+  async forgotPassword(input: AuthForgotPasswordDto) {
+    const user = await this.prismaClient.user.findUnique({
+      where: { email: input.email },
+    });
+
+    if (!user) {
+      return {
+        message: 'If the email exists, a password reset token will be sent',
+      };
+    }
+
+    const { token } = await this._createToken({
+      userId: user.id,
+      tokenType: 'password_reset',
+      characterType: 'numeric',
+      length: 6,
+      expiration: ms('1h'),
+      deleteExistingTokens: true,
+    });
+
+    // TODO: Send email with reset token
+    console.log(`Password reset token for ${input.email}: ${token}`);
+
+    return {
+      message: 'If the email exists, a password reset token will be sent',
+    };
+  }
+
+  async resetPassword(input: AuthResetPasswordDto) {
+    // Find the token
+    const tokenDoc = await this.prismaClient.userToken.findFirst({
+      where: {
+        type: 'password_reset',
+        expiresAt: { gt: new Date() },
+      },
+      include: { user: true },
+    });
+
+    if (!tokenDoc) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    // Verify the token
+    await this._verifyToken(tokenDoc, input.token);
+
+    // Update password
+    const hashedPassword = await this.authUtil.hashPassword(input.newPassword);
+    await this.prismaClient.user.update({
+      where: { id: tokenDoc.userId },
+      data: {
+        password: hashedPassword,
+        passwordUpdatedAt: new Date(),
+      },
+    });
+
+    // Delete the used token
+    await this.prismaClient.userToken.delete({
+      where: { id: tokenDoc.id },
+    });
+
+    // Blacklist all refresh tokens for this user (optional security measure)
+    await this.prismaClient.refreshTokenBlacklist.createMany({
+      data: [],
+    });
+
+    return { message: 'Password reset successfully' };
+  }
+
+  async changePassword(userId: Pick<User, 'id'>, input: AuthChangePasswordDto) {
+    const user = await this.prismaClient.user.findUnique({
+      where: { id: userId.id },
+      include: {
+        userTokens: true,
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await this.authUtil.verifyPassword(
+      input.currentPassword,
+      user.password,
+    );
+
+    if (!isCurrentPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    // Check if new password is same as current password
+    const isSamePassword = await this.authUtil.verifyPassword(
+      input.newPassword,
+      user.password,
+    );
+
+    if (isSamePassword) {
+      throw new BadRequestException(
+        'New password cannot be the same as current password',
+      );
+    }
+
+    // Update password
+    const hashedPassword = await this.authUtil.hashPassword(input.newPassword);
+    await this.prismaClient.user.update({
+      where: { id: userId.id },
+      data: {
+        password: hashedPassword,
+        passwordUpdatedAt: new Date(),
+      },
+    });
+
+    // await this._blacklistRefreshToken(user.id);
+
+    return { message: 'Password changed successfully' };
+  }
+
+  async logout(input: AuthRefreshDto) {
+    const payload = await this._validateRefresh(input.refreshToken);
+
+    // 1. blacklist refresh token
+    await this._blacklistRefreshToken(payload.reference);
+
+    return {};
+  }
+
+  async refresh(input: AuthRefreshDto) {
+    const payload = await this._validateRefresh(input.refreshToken);
+
+    // 1. blacklist refresh token
+    await this._blacklistRefreshToken(payload.reference);
+
+    // 2. generate new token pairs
+    const tokens = this._generateAuthTokenPairs(payload.userId, payload.role);
+
+    return tokens;
   }
 }
