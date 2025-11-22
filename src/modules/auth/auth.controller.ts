@@ -1,4 +1,12 @@
-import { Body, Controller, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthRegisterDto } from './dtos/auth.register.dto';
 import { JwtGuard } from '../global/guards/jwt.guard';
@@ -65,5 +73,17 @@ export class AuthController {
   @Post('logout')
   async logout(@Body() input: AuthRefreshDto) {
     return await this.authService.logout(input);
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('')
+  async getUser(@Req() req: Request) {
+    const { password, ...rest } = req.user!;
+
+    void password;
+
+    return {
+      user: rest,
+    };
   }
 }
