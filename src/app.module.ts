@@ -5,6 +5,7 @@ import { configValidationSchema } from './configs/validation/validation.schema';
 import * as z from 'zod';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './modules/global/prisma/prisma.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 function validate(config: Record<string, unknown>) {
   try {
@@ -26,6 +27,7 @@ function validate(config: Record<string, unknown>) {
       validate: validate,
     }),
     PrismaModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

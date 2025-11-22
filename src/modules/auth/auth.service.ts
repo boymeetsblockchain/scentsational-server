@@ -192,7 +192,6 @@ export class AuthService {
 
     const { password, ...userWithoutPassword } = user;
 
-    void password;
     return {
       user: userWithoutPassword,
       tokens: {
