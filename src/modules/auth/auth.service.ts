@@ -9,6 +9,7 @@ import * as bcrypt from 'bcrypt';
 import { User, UserToken } from 'generated/prisma/browser';
 import { AuthRegisterDto } from './dtos/auth.register.dto';
 import { AuthLoginDto } from './dtos/auth.login.dto';
+import { AuthVerifyEmailDto } from './dtos/auth.verify-email.dto';
 
 @Injectable()
 export class AuthService {
@@ -171,7 +172,7 @@ export class AuthService {
 
     const { token } = await this._createToken({
       userId: user.id,
-      tokenType: 'verify_email',
+      tokenType: 'email_verify',
       characterType: 'numeric',
       length: 4,
       expiration: ms('1h'),
@@ -248,7 +249,7 @@ export class AuthService {
 
     const { token } = await this._createToken({
       userId: user.id,
-      tokenType: 'verify_email',
+      tokenType: 'email_verify',
       characterType: 'numeric',
       length: 4,
       expiration: ms('1h'),
@@ -259,6 +260,30 @@ export class AuthService {
 
     return {
       token,
+    };
+  }
+
+  async verifyEmail(user: Pick<User, 'id'>, input: AuthVerifyEmailDto) {
+    const tokenDoc = await this.prismaClient.userToken.findFirst({
+      where: {
+        userId: user.id,
+        type: 'email_verify',
+      },
+    });
+
+    if (!tokenDoc) {
+      throw new BadRequestException('No verification token found');
+    }
+
+    await this._verifyToken(tokenDoc, input.token);
+
+    await this.prismaClient.user.update({
+      where: { id: user.id },
+      data: { emailVerified: true },
+    });
+
+    return {
+      message: 'Email verified successfully',
     };
   }
 }
