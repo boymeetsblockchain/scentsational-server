@@ -6,6 +6,7 @@ import * as z from 'zod';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './modules/global/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { JwtStrategy } from './modules/global/strategies/jwt.strategy';
 
 function validate(config: Record<string, unknown>) {
   try {
@@ -30,6 +31,6 @@ function validate(config: Record<string, unknown>) {
     AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, JwtStrategy],
 })
 export class AppModule {}

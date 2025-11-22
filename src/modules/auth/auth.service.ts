@@ -267,6 +267,14 @@ export class AuthService {
   }
 
   async verifyEmail(user: Pick<User, 'id'>, input: AuthVerifyEmailDto) {
+    const isEmailVerified = await this.prismaClient.user.findUnique({
+      where: { id: user.id },
+      select: { emailVerified: true },
+    });
+
+    if (isEmailVerified?.emailVerified)
+      throw new BadRequestException('Email is already verified');
+
     const tokenDoc = await this.prismaClient.userToken.findFirst({
       where: {
         userId: user.id,
