@@ -176,7 +176,7 @@ export class AuthService {
 
     const { token } = await this._createToken({
       userId: user.id,
-      tokenType: 'email_verify',
+      tokenType: 'EMAIL_VERIFY',
       characterType: 'numeric',
       length: 4,
       expiration: ms('1h'),
@@ -278,7 +278,7 @@ export class AuthService {
     const tokenDoc = await this.prismaClient.userToken.findFirst({
       where: {
         userId: user.id,
-        type: 'email_verify',
+        type: 'EMAIL_VERIFY',
       },
     });
 
@@ -330,7 +330,7 @@ export class AuthService {
     // Find the token
     const tokenDoc = await this.prismaClient.userToken.findFirst({
       where: {
-        type: 'password_reset',
+        type: 'PASSWORD_RESET',
         expiresAt: { gt: new Date() },
       },
       include: { user: true },
