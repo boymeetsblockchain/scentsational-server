@@ -4,7 +4,7 @@ import { ConcentrationLevel } from 'generated/prisma/enums';
 import {
   ProductCreateDto,
   ProductVariantCreateDto,
-} from './dtos/product.create.dto';
+} from './dtos/products.create.dto';
 import slugify from 'slugify';
 
 @Injectable()
