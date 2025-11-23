@@ -7,7 +7,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
 import { RequiresVerifiedEmail } from '../decorators/email-verified.decorator';
-import { User } from 'generated/prisma';
+import { User } from 'generated/prisma/client';
 
 @Injectable()
 export class JwtGuard extends AuthGuard('jwt') {

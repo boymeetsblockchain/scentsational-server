@@ -6,7 +6,7 @@ import { CONFIGS } from 'src/configs';
 import { generateRandomString } from '../global/utils/text';
 import * as ms from 'ms';
 import * as bcrypt from 'bcrypt';
-import { User, UserToken } from 'generated/prisma/browser';
+import { User, UserToken } from 'generated/prisma/client';
 import { AuthRegisterDto } from './dtos/auth.register.dto';
 import { AuthLoginDto } from './dtos/auth.login.dto';
 import { AuthVerifyEmailDto } from './dtos/auth.verify-email.dto';
