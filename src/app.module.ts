@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './modules/global/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtStrategy } from './modules/global/strategies/jwt.strategy';
+import { ProductsModule } from './modules/products/products.module';
 
 function validate(config: Record<string, unknown>) {
   try {
@@ -29,6 +30,7 @@ function validate(config: Record<string, unknown>) {
     }),
     PrismaModule,
     AuthModule,
+    ProductsModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtStrategy],
