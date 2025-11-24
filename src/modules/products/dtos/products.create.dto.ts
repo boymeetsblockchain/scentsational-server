@@ -27,11 +27,6 @@ import {
 export class ProductVariantCreateDto {
   @IsString()
   @IsNotEmpty()
-  @MaxLength(50)
-  sku: string;
-
-  @IsString()
-  @IsNotEmpty()
   @MaxLength(100)
   name: string;
 

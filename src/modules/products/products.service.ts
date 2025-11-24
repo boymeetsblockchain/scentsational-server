@@ -36,21 +36,56 @@ export class ProductsService {
         sku: this.productsUtils.generateVariantSKU(sku, variant, index),
       })) || [];
 
-    // 4. Create product with generated fields
+    // 4. Create product with explicit data structure
     const productData = {
-      ...input,
+      // Basic fields
+      name: input.name,
+      description: input.description,
+      price: input.price,
+      comparePrice: input.comparePrice,
+      costPrice: input.costPrice,
+      quantity: input.quantity,
+      trackQuantity: input.trackQuantity,
+      allowBackorder: input.allowBackorder,
+      lowStockAlert: input.lowStockAlert,
+
+      // Product classification
+      type: input.type,
+      concentration: input.concentration,
+      gender: input.gender,
+      season: input.season,
+
+      // Fragrance notes
+      topNotes: input.topNotes,
+      middleNotes: input.middleNotes,
+      baseNotes: input.baseNotes,
+
+      // Specifications
+      volume: input.volume,
+      weight: input.weight,
+      ingredients: input.ingredients,
+      howToUse: input.howToUse,
+
+      // Marketing
+      featured: input.featured,
+      status: input.status,
+      tags: input.tags,
+
+      // Generated fields
       sku,
       slug,
-      variants: {
-        create: variantsWithSKUs,
-      },
-      images: {
-        create: input.images,
-      },
+
+      // Relations
       categories: {
         create: input.categoryIds.map((categoryId) => ({
           category: { connect: { id: categoryId } },
         })),
+      },
+      images: {
+        create: input.images,
+      },
+      variants: {
+        create: variantsWithSKUs,
       },
     };
 

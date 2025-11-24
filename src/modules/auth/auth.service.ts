@@ -311,7 +311,7 @@ export class AuthService {
 
     const { token } = await this._createToken({
       userId: user.id,
-      tokenType: 'password_reset',
+      tokenType: 'PASSWORD_RESET',
       characterType: 'numeric',
       length: 6,
       expiration: ms('1h'),
