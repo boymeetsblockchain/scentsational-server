@@ -8,8 +8,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-
 enum UserRole {
   USER
   ADMIN
@@ -28,6 +26,7 @@ enum TokenType {
   EMAIL_VERIFY
   PHONE_VERIFY
 }
+
 enum ProductStatus {
   DRAFT
   ACTIVE
@@ -68,6 +67,7 @@ enum Gender {
   WOMENS
   UNISEX
 }
+
 enum OrderStatus {
   PENDING
   CONFIRMED
@@ -97,6 +97,11 @@ enum PaymentMethod {
   WALLET
 }
 
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_SHIPPING
+}
 
 // ============================================
 // USER MANAGEMENT
@@ -180,7 +185,6 @@ model RefreshTokenBlacklist {
 // PRODUCT CATALOG
 // ============================================
 
-
 model Product {
   id          String  @id @default(uuid()) @db.Uuid
   sku         String  @unique @db.VarChar(50)
@@ -217,11 +221,11 @@ model Product {
   howToUse    String?  @db.Text
 
   // Marketing & SEO
-  featured        Boolean @default(false)
+  featured        Boolean       @default(false)
   status          ProductStatus @default(DRAFT)
   tags            String[]
-  metaTitle       String? @db.VarChar(200)
-  metaDescription String? @db.VarChar(500)
+  metaTitle       String?       @db.VarChar(200)
+  metaDescription String?       @db.VarChar(500)
 
   // Timestamps
   createdAt   DateTime  @default(now())
@@ -264,14 +268,14 @@ model ProductImage {
 }
 
 model Category {
-  id          String    @id @default(uuid()) @db.Uuid
-  name        String    @db.VarChar(100)
-  slug        String    @unique @db.VarChar(150)
-  description String?   @db.Text
+  id          String            @id @default(uuid()) @db.Uuid
+  name        String            @db.VarChar(100)
+  slug        String            @unique @db.VarChar(150)
+  description String?           @db.Text
   image       String?
-  parentId    String?   @db.Uuid
-  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
-  children    Category[] @relation("CategoryHierarchy")
+  parentId    String?           @db.Uuid
+  parent      Category?         @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children    Category[]        @relation("CategoryHierarchy")
   products    ProductCategory[]
 
   // SEO
@@ -320,9 +324,9 @@ model ProductVariant {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  cartItems      CartItem[]
-  orderItems     OrderItem[]
-  inventoryLogs  InventoryLog[]
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  inventoryLogs InventoryLog[]
 
   @@index([productId], name: "idx_variant_product")
   @@index([sku], name: "idx_variant_sku")
@@ -355,22 +359,22 @@ model InventoryLog {
 // ============================================
 
 model Review {
-  id         String  @id @default(uuid()) @db.Uuid
-  productId  String  @db.Uuid
-  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  userId     String  @db.Uuid
-  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  rating     Int     @db.SmallInt
-  title      String? @db.VarChar(200)
-  comment    String? @db.Text
-  longevity  Int?    @db.SmallInt
-  sillage    Int?    @db.SmallInt
-  projection Int?    @db.SmallInt
-  isVerified Boolean @default(false)
-  helpfulCount Int   @default(0)
-  status     String  @default("PENDING") @db.VarChar(20)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           String   @id @default(uuid()) @db.Uuid
+  productId    String   @db.Uuid
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId       String   @db.Uuid
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating       Int      @db.SmallInt
+  title        String?  @db.VarChar(200)
+  comment      String?  @db.Text
+  longevity    Int?     @db.SmallInt
+  sillage      Int?     @db.SmallInt
+  projection   Int?     @db.SmallInt
+  isVerified   Boolean  @default(false)
+  helpfulCount Int      @default(0)
+  status       String   @default("PENDING") @db.VarChar(20)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([productId, userId])
   @@index([productId], name: "idx_review_product")
@@ -432,13 +436,11 @@ model CartItem {
 // ORDERS & PAYMENTS
 // ============================================
 
-
-
 model Order {
-  id          String   @id @default(uuid()) @db.Uuid
-  orderNumber String   @unique @db.VarChar(50)
-  userId      String   @db.Uuid
-  user        User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  id          String @id @default(uuid()) @db.Uuid
+  orderNumber String @unique @db.VarChar(50)
+  userId      String @db.Uuid
+  user        User   @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   // Order totals
   subtotal       Decimal @db.Decimal(10, 2)
@@ -459,8 +461,8 @@ model Order {
   customerPhone     String?
 
   // Addresses
-  shippingAddressId String? @db.Uuid
-  billingAddressId  String? @db.Uuid
+  shippingAddressId String?  @db.Uuid
+  billingAddressId  String?  @db.Uuid
   shippingAddress   Address? @relation("ShippingAddress", fields: [shippingAddressId], references: [id], onDelete: SetNull)
   billingAddress    Address? @relation("BillingAddress", fields: [billingAddressId], references: [id], onDelete: SetNull)
 
@@ -475,7 +477,7 @@ model Order {
   shippingPostalCode   String
   shippingCountry      String
   shippingPhone        String?
-  
+
   billingFirstName    String
   billingLastName     String
   billingCompany      String?
@@ -497,9 +499,9 @@ model Order {
   deliveredAt    DateTime?
 
   // Discount
-  discountId   String?  @db.Uuid
+  discountId   String?   @db.Uuid
   discount     Discount? @relation(fields: [discountId], references: [id], onDelete: SetNull)
-  discountCode String?  @db.VarChar(50)
+  discountCode String?   @db.VarChar(50)
 
   // Notes
   customerNote String? @db.Text
@@ -523,22 +525,22 @@ model Order {
 }
 
 model OrderItem {
-  id          String          @id @default(uuid()) @db.Uuid
-  orderId     String          @db.Uuid
-  order       Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId   String          @db.Uuid
-  product     Product         @relation(fields: [productId], references: [id], onDelete: Restrict)
-  variantId   String?         @db.Uuid
-  variant     ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  id           String          @id @default(uuid()) @db.Uuid
+  orderId      String          @db.Uuid
+  order        Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId    String          @db.Uuid
+  product      Product         @relation(fields: [productId], references: [id], onDelete: Restrict)
+  variantId    String?         @db.Uuid
+  variant      ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
   productName  String
   productSku   String
   variantName  String?
   productImage String?
-  price        Decimal  @db.Decimal(10, 2)
-  comparePrice Decimal? @db.Decimal(10, 2)
+  price        Decimal         @db.Decimal(10, 2)
+  comparePrice Decimal?        @db.Decimal(10, 2)
   quantity     Int
-  total        Decimal  @db.Decimal(10, 2)
-  createdAt    DateTime @default(now())
+  total        Decimal         @db.Decimal(10, 2)
+  createdAt    DateTime        @default(now())
 
   @@index([orderId], name: "idx_orderitem_order")
   @@index([productId], name: "idx_orderitem_product")
@@ -610,18 +612,18 @@ model ShippingZone {
 }
 
 model ShippingRate {
-  id              String       @id @default(uuid()) @db.Uuid
-  shippingZoneId  String       @db.Uuid
-  shippingZone    ShippingZone @relation(fields: [shippingZoneId], references: [id], onDelete: Cascade)
-  name            String       @db.VarChar(100)
-  price           Decimal      @db.Decimal(10, 2)
-  minOrderAmount  Decimal?     @db.Decimal(10, 2)
-  maxOrderAmount  Decimal?     @db.Decimal(10, 2)
-  estimatedDays   String?      @db.VarChar(50)
-  isActive        Boolean      @default(true)
-  sortOrder       Int          @default(0)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id             String       @id @default(uuid()) @db.Uuid
+  shippingZoneId String       @db.Uuid
+  shippingZone   ShippingZone @relation(fields: [shippingZoneId], references: [id], onDelete: Cascade)
+  name           String       @db.VarChar(100)
+  price          Decimal      @db.Decimal(10, 2)
+  minOrderAmount Decimal?     @db.Decimal(10, 2)
+  maxOrderAmount Decimal?     @db.Decimal(10, 2)
+  estimatedDays  String?      @db.VarChar(50)
+  isActive       Boolean      @default(true)
+  sortOrder      Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@index([shippingZoneId], name: "idx_shiprate_zone")
   @@index([isActive], name: "idx_shiprate_active")
@@ -631,33 +633,27 @@ model ShippingRate {
 // DISCOUNTS & PROMOTIONS
 // ============================================
 
-enum DiscountType {
-  PERCENTAGE
-  FIXED_AMOUNT
-  FREE_SHIPPING
-}
-
 model Discount {
-  id                  String       @id @default(uuid()) @db.Uuid
-  code                String       @unique @db.VarChar(50)
-  name                String       @db.VarChar(100)
-  description         String?      @db.Text
-  type                DiscountType
-  value               Decimal      @db.Decimal(10, 2)
-  usageLimit          Int?
-  usedCount           Int          @default(0)
-  minOrderAmount      Decimal?     @db.Decimal(10, 2)
-  maxDiscountAmount   Decimal?     @db.Decimal(10, 2)
-  startsAt            DateTime?
-  expiresAt           DateTime?
-  isActive            Boolean      @default(true)
-  appliesToAllProducts Boolean     @default(true)
-  productIds          String[]
-  categoryIds         String[]
-  oncePerCustomer     Boolean      @default(false)
-  customerIds         String[]
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
+  id                   String       @id @default(uuid()) @db.Uuid
+  code                 String       @unique @db.VarChar(50)
+  name                 String       @db.VarChar(100)
+  description          String?      @db.Text
+  type                 DiscountType
+  value                Decimal      @db.Decimal(10, 2)
+  usageLimit           Int?
+  usedCount            Int          @default(0)
+  minOrderAmount       Decimal?     @db.Decimal(10, 2)
+  maxDiscountAmount    Decimal?     @db.Decimal(10, 2)
+  startsAt             DateTime?
+  expiresAt            DateTime?
+  isActive             Boolean      @default(true)
+  appliesToAllProducts Boolean      @default(true)
+  productIds           String[]
+  categoryIds          String[]
+  oncePerCustomer      Boolean      @default(false)
+  customerIds          String[]
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
 
   // Relations
   orders         Order[]
