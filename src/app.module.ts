@@ -9,6 +9,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { JwtStrategy } from './modules/global/strategies/jwt.strategy';
 import { ProductsModule } from './modules/products/products.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { CategoriesModule } from './modules/categories/categories.module';
 
 function validate(config: Record<string, unknown>) {
   try {
@@ -33,6 +34,7 @@ function validate(config: Record<string, unknown>) {
     AuthModule,
     ProductsModule,
     UploadModule,
+    CategoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtStrategy],
