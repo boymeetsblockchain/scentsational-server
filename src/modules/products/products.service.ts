@@ -10,6 +10,7 @@ import { ProductStatus } from 'generated/prisma/enums';
 import { ProductCreateDto } from './dtos/products.create.dto';
 import { ProductUpdateDto } from './dtos/products.update.dto';
 import { ProductQueryDto } from './dtos/products.query.dto';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class ProductsService {
@@ -227,42 +228,30 @@ export class ProductsService {
 
   // Get Single Product by ID or Slug
   async getProductById(identifier: string) {
+    const where: any = {};
+
+    if (isUUID(identifier)) {
+      // Only query id if it's a valid UUID
+      where.id = identifier;
+    } else {
+      // Otherwise query by slug or SKU
+      where.OR = [{ slug: identifier }, { sku: identifier }];
+    }
+
     const product = await this.prismaClient.product.findFirst({
-      where: {
-        OR: [{ id: identifier }, { slug: identifier }, { sku: identifier }],
-      },
+      where,
       include: {
-        images: {
-          orderBy: { sortOrder: 'asc' },
-        },
-        categories: {
-          include: {
-            category: true,
-          },
-        },
-        variants: {
-          where: { isActive: true },
-          orderBy: { sortOrder: 'asc' },
-        },
+        images: { orderBy: { sortOrder: 'asc' } },
+        categories: { include: { category: true } },
+        variants: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } },
         reviews: {
           where: { status: 'APPROVED' },
           include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-              },
-            },
+            user: { select: { id: true, firstName: true, lastName: true } },
           },
           orderBy: { createdAt: 'desc' },
         },
-        _count: {
-          select: {
-            reviews: true,
-            wishlists: true,
-          },
-        },
+        _count: { select: { reviews: true, wishlists: true } },
       },
     });
 
@@ -270,13 +259,9 @@ export class ProductsService {
       throw new NotFoundException('Product not found');
     }
 
-    // Calculate average rating
     const averageRating = await this.calculateAverageRating(product.id);
 
-    return {
-      ...product,
-      averageRating,
-    };
+    return { ...product, averageRating };
   }
 
   // Update Product
