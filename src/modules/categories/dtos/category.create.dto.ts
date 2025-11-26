@@ -12,10 +12,9 @@ export class CategoryCreateDto {
   @IsString()
   @MaxLength(100)
   name: string;
-
-  @IsOptional()
   @IsString()
   @MaxLength(150)
+  @IsOptional()
   slug?: string;
 
   @IsOptional()

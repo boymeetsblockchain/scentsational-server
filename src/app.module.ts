@@ -8,6 +8,7 @@ import { PrismaModule } from './modules/global/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtStrategy } from './modules/global/strategies/jwt.strategy';
 import { ProductsModule } from './modules/products/products.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 function validate(config: Record<string, unknown>) {
   try {
@@ -31,6 +32,7 @@ function validate(config: Record<string, unknown>) {
     PrismaModule,
     AuthModule,
     ProductsModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtStrategy],

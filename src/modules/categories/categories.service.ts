@@ -6,15 +6,60 @@ import {
 import { PrismaService } from '../global/prisma/prisma.service';
 import { CategoryCreateDto } from './dtos/category.create.dto';
 import { CategoryUpdateDto } from './dtos/category.update.dto';
+import { CategoriesUtilsService } from './categories.utils.service';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private readonly prismaClient: PrismaService) {}
+  constructor(
+    private readonly prismaClient: PrismaService,
+    private readonly categoriesUtils: CategoriesUtilsService,
+  ) {}
+
+  private async validateParentCategory(parentId: string) {
+    const parent = await this.prismaClient.category.findUnique({
+      where: { id: parentId },
+    });
+
+    if (!parent) {
+      throw new NotFoundException('Parent category not found');
+    }
+
+    if (!parent.isActive) {
+      throw new BadRequestException('Parent category is inactive');
+    }
+
+    return parent;
+  }
+
+  // Check for Circular Reference
+  private async checkCircularReference(
+    categoryId: string,
+    potentialParentId: string,
+  ) {
+    let current = await this.prismaClient.category.findUnique({
+      where: { id: potentialParentId },
+      include: { parent: true },
+    });
+
+    while (current) {
+      if (current.id === categoryId) {
+        throw new BadRequestException(
+          'Circular reference detected: cannot make a category its own ancestor',
+        );
+      }
+      current = current.parent
+        ? await this.prismaClient.category.findUnique({
+            where: { id: current.parent.id },
+            include: { parent: true },
+          })
+        : null;
+    }
+  }
 
   // Create Category
   async createCategory(input: CategoryCreateDto) {
     // Generate slug from name if not provided
-    const slug = input.slug || (await this.generateUniqueSlug(input.name));
+    const slug = await this.categoriesUtils.generateUniqueSlug(input.name);
 
     // Validate parent if provided
     if (input.parentId) {
@@ -45,7 +90,6 @@ export class CategoriesService {
     });
   }
 
-  // Get All Categories
   async getAllCategories(includeInactive: boolean = false) {
     const where = includeInactive ? {} : { isActive: true };
 
@@ -127,7 +171,7 @@ export class CategoriesService {
     // If name is updated and slug is not provided, generate new slug
     let slug = input.slug || category.slug;
     if (input.name && input.name !== category.name && !input.slug) {
-      slug = await this.generateUniqueSlug(input.name);
+      slug = await this.categoriesUtils.generateUniqueSlug(input.name);
     }
 
     // Validate parent if changing
@@ -291,76 +335,5 @@ export class CategoriesService {
     }
 
     return breadcrumb;
-  }
-
-  // Validate Parent Category
-  private async validateParentCategory(parentId: string) {
-    const parent = await this.prismaClient.category.findUnique({
-      where: { id: parentId },
-    });
-
-    if (!parent) {
-      throw new NotFoundException('Parent category not found');
-    }
-
-    if (!parent.isActive) {
-      throw new BadRequestException('Parent category is inactive');
-    }
-
-    return parent;
-  }
-
-  // Check for Circular Reference
-  private async checkCircularReference(
-    categoryId: string,
-    potentialParentId: string,
-  ) {
-    let current = await this.prismaClient.category.findUnique({
-      where: { id: potentialParentId },
-      include: { parent: true },
-    });
-
-    while (current) {
-      if (current.id === categoryId) {
-        throw new BadRequestException(
-          'Circular reference detected: cannot make a category its own ancestor',
-        );
-      }
-      current = current.parent
-        ? await this.prismaClient.category.findUnique({
-            where: { id: current.parent.id },
-            include: { parent: true },
-          })
-        : null;
-    }
-  }
-
-  // Generate unique slug
-  private async generateUniqueSlug(name: string): Promise<string> {
-    const baseSlug = this.slugify(name);
-    let slug = baseSlug;
-    let counter = 1;
-
-    while (await this.prismaClient.category.findUnique({ where: { slug } })) {
-      slug = `${baseSlug}-${counter}`;
-      counter++;
-
-      if (counter > 100) {
-        throw new Error('Unable to generate unique slug after 100 attempts');
-      }
-    }
-
-    return slug;
-  }
-
-  // Simple slugify function
-  private slugify(text: string): string {
-    return text
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^\w\-]+/g, '')
-      .replace(/\-\-+/g, '-')
-      .replace(/^-+/, '')
-      .replace(/-+$/, '');
   }
 }
