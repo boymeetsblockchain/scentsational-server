@@ -4,9 +4,8 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../global/prisma/prisma.service';
-import { OrderCreateDto } from './dtos/order.create.dto';
-import { OrderUpdateDto } from './dtos/order.update.dto';
-import { OrderQueryDto } from './dtos/order.query.dto';
+import { OrderCreateDto } from './dtos/orders.create.dto';
+import { OrderQueryDto } from './dtos/orders.query.dto';
 import {
   OrderStatus,
   PaymentStatus,
@@ -57,7 +56,7 @@ export class OrdersService {
 
     // Calculate totals
     const subtotal = input.items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
+      (sum: any, item: any) => sum + item.price * item.quantity,
       0,
     );
     const totalAmount =
