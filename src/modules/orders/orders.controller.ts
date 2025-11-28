@@ -22,6 +22,7 @@ import { UserRole, OrderStatus, PaymentStatus } from 'generated/prisma/enums';
 import { OrderCreateDto } from './dtos/orders.create.dto';
 import { OrderQueryDto } from './dtos/orders.query.dto';
 import { Roles } from '../global/decorators/roles-decorator';
+import { Request } from 'express';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -36,8 +37,10 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
-  async createOrder(@Body() input: OrderCreateDto) {
-    return await this.ordersService.createOrder(input);
+  async createOrder(@Req() req: Request, @Body() input: OrderCreateDto) {
+    return await this.ordersService.createOrder(input, {
+      id: req.user?.id!,
+    });
   }
 
   // Get order by ID or order number (public for order tracking)

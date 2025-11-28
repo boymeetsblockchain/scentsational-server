@@ -11,6 +11,7 @@ import {
   PaymentStatus,
   PaymentMethod,
 } from 'generated/prisma/enums';
+import { User } from 'generated/prisma/client';
 
 @Injectable()
 export class OrdersService {
@@ -41,7 +42,7 @@ export class OrdersService {
   }
 
   // Create Order
-  async createOrder(input: OrderCreateDto) {
+  async createOrder(input: OrderCreateDto, user: Pick<User, 'id'>) {
     // Validate billing address based on payment method
     if (this.requiresBillingAddress(input.paymentMethod)) {
       if (!input.billingAddressLine1 || !input.billingCity) {
@@ -68,7 +69,7 @@ export class OrdersService {
     return this.prismaClient.order.create({
       data: {
         orderNumber,
-        userId: input.userId,
+        userId: user.id!,
 
         // Totals
         subtotal,
