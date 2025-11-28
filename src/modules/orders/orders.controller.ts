@@ -24,14 +24,6 @@ import { OrderQueryDto } from './dtos/orders.query.dto';
 import { Roles } from '../global/decorators/roles-decorator';
 import { Request } from 'express';
 
-interface AuthenticatedRequest extends Request {
-  user: {
-    id: string;
-    email: string;
-    type: UserRole;
-  };
-}
-
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
@@ -51,10 +43,7 @@ export class OrdersController {
 
   @Get('my/orders')
   @UseGuards(JwtGuard)
-  async getMyOrders(
-    @Req() req: AuthenticatedRequest,
-    @Query() query: OrderQueryDto,
-  ) {
+  async getMyOrders(@Req() req: Request, @Query() query: OrderQueryDto) {
     return await this.ordersService.getUserOrders(req.user.id, query);
   }
 
@@ -62,7 +51,7 @@ export class OrdersController {
   @Patch('my/orders/:id/cancel')
   @UseGuards(JwtGuard)
   async cancelMyOrder(
-    @Req() req: AuthenticatedRequest,
+    @Req() req: Request,
     @Param('id', ParseUUIDPipe) orderId: string,
     @Body('reason') reason?: string,
   ) {

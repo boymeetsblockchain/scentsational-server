@@ -289,10 +289,10 @@ export class OrdersService {
   }
 
   // Get User Orders
-  async getUserOrders(userId: string, query: OrderQueryDto) {
+  async getUserOrders(user: Pick<User, 'id'>, query: OrderQueryDto) {
     return this.getAllOrders({
       ...query,
-      userId,
+      userId: user.id!,
     });
   }
 
