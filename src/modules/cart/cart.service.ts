@@ -6,16 +6,16 @@ import {
 import { PrismaService } from '../global/prisma/prisma.service';
 import { AddToCartDto } from './dtos/cart.add.dto';
 import { UpdateCartItemDto } from './dtos/cart.update.dto';
-import { ProductVariant } from 'generated/prisma/client';
+import { ProductVariant, User } from 'generated/prisma/client';
 
 @Injectable()
 export class CartService {
   constructor(private readonly prismaClient: PrismaService) {}
 
   // Get or Create User Cart
-  async getOrCreateUserCart(userId: string) {
+  async getOrCreateUserCart(user: Pick<User, 'id'>) {
     let cart = await this.prismaClient.cart.findUnique({
-      where: { userId },
+      where: { userId: user.id },
       include: {
         items: {
           include: {
@@ -37,7 +37,7 @@ export class CartService {
     if (!cart) {
       cart = await this.prismaClient.cart.create({
         data: {
-          userId,
+          userId: user.id,
           itemsCount: 0,
           totalAmount: 0,
         },
@@ -63,11 +63,11 @@ export class CartService {
   }
 
   // Add Item to Cart
-  async addToCart(userId: string, input: AddToCartDto) {
+  async addToCart(user: Pick<User, 'id'>, input: AddToCartDto) {
     const { productId, variantId, quantity = 1 } = input;
 
     // Get or create cart
-    const cart = await this.getOrCreateUserCart(userId);
+    const cart = await this.getOrCreateUserCart(user);
 
     // Verify product exists and get current price
     const product = await this.prismaClient.product.findUnique({
@@ -88,10 +88,10 @@ export class CartService {
 
     // Get price from variant or base product
     let price = product.price;
-    let variant = null;
+    let variant: ProductVariant | null = null;
 
     if (variantId) {
-      variant = product.variants?.[0] as unknown as ProductVariant;
+      variant = product.variants?.[0] ?? null;
       if (!variant) {
         throw new NotFoundException('Product variant not found');
       }
@@ -114,13 +114,13 @@ export class CartService {
 
     if (existingItem) {
       // Update quantity if item exists
-      return await this.updateCartItem(userId, existingItem.id, {
+      return await this.updateCartItem(user, existingItem.id, {
         quantity: existingItem.quantity + quantity,
       });
     }
 
     // Create new cart item
-    const cartItem = await this.prismaClient.cartItem.create({
+    await this.prismaClient.cartItem.create({
       data: {
         cartId: cart.id,
         productId,
@@ -128,28 +128,17 @@ export class CartService {
         quantity,
         price,
       },
-      include: {
-        product: {
-          include: {
-            images: {
-              where: { isPrimary: true },
-              take: 1,
-            },
-          },
-        },
-        variant: true,
-      },
     });
 
     // Update cart totals
     await this.updateCartTotals(cart.id);
 
-    return await this.getOrCreateUserCart(userId);
+    return await this.getOrCreateUserCart(user);
   }
 
   // Update Cart Item Quantity
   async updateCartItem(
-    userId: string,
+    user: Pick<User, 'id'>,
     cartItemId: string,
     input: UpdateCartItemDto,
   ) {
@@ -159,7 +148,7 @@ export class CartService {
     const cartItem = await this.prismaClient.cartItem.findFirst({
       where: {
         id: cartItemId,
-        cart: { userId },
+        cart: { userId: user.id },
       },
       include: {
         product: true,
@@ -179,39 +168,28 @@ export class CartService {
 
     if (quantity <= 0) {
       // Remove item if quantity is 0 or less
-      return await this.removeFromCart(userId, cartItemId);
+      return await this.removeFromCart(user, cartItemId);
     }
 
     // Update cart item
-    const updatedItem = await this.prismaClient.cartItem.update({
+    await this.prismaClient.cartItem.update({
       where: { id: cartItemId },
       data: { quantity },
-      include: {
-        product: {
-          include: {
-            images: {
-              where: { isPrimary: true },
-              take: 1,
-            },
-          },
-        },
-        variant: true,
-      },
     });
 
     // Update cart totals
     await this.updateCartTotals(cartItem.cartId);
 
-    return await this.getOrCreateUserCart(userId);
+    return await this.getOrCreateUserCart(user);
   }
 
   // Remove Item from Cart
-  async removeFromCart(userId: string, cartItemId: string) {
+  async removeFromCart(user: Pick<User, 'id'>, cartItemId: string) {
     // Verify cart item exists and belongs to user
     const cartItem = await this.prismaClient.cartItem.findFirst({
       where: {
         id: cartItemId,
-        cart: { userId },
+        cart: { userId: user.id },
       },
     });
 
@@ -227,13 +205,13 @@ export class CartService {
     // Update cart totals
     await this.updateCartTotals(cartItem.cartId);
 
-    return await this.getOrCreateUserCart(userId);
+    return await this.getOrCreateUserCart(user);
   }
 
   // Clear Entire Cart
-  async clearCart(userId: string) {
+  async clearCart(user: Pick<User, 'id'>) {
     const cart = await this.prismaClient.cart.findUnique({
-      where: { userId },
+      where: { userId: user.id },
     });
 
     if (!cart) {
@@ -273,9 +251,9 @@ export class CartService {
   }
 
   // Get Cart Summary (for header/mini-cart)
-  async getCartSummary(userId: string) {
+  async getCartSummary(user: Pick<User, 'id'>) {
     const cart = await this.prismaClient.cart.findUnique({
-      where: { userId },
+      where: { userId: user.id },
       select: {
         itemsCount: true,
         totalAmount: true,
@@ -314,16 +292,16 @@ export class CartService {
   }
 
   // Merge Guest Cart with User Cart (after login)
-  async mergeCarts(userId: string, guestCartItems: any[]) {
+  async mergeCarts(user: Pick<User, 'id'>, guestCartItems: any[]) {
     if (!guestCartItems.length) {
-      return await this.getOrCreateUserCart(userId);
+      return await this.getOrCreateUserCart(user);
     }
 
-    const userCart = await this.getOrCreateUserCart(userId);
+    const userCart = await this.getOrCreateUserCart(user);
 
     for (const guestItem of guestCartItems) {
       try {
-        await this.addToCart(userId, {
+        await this.addToCart(user, {
           productId: guestItem.productId,
           variantId: guestItem.variantId,
           quantity: guestItem.quantity,
@@ -334,12 +312,12 @@ export class CartService {
       }
     }
 
-    return await this.getOrCreateUserCart(userId);
+    return await this.getOrCreateUserCart(user);
   }
 
   // Validate Cart Before Checkout
-  async validateCart(userId: string) {
-    const cart = await this.getOrCreateUserCart(userId);
+  async validateCart(user: Pick<User, 'id'>) {
+    const cart = await this.getOrCreateUserCart(user);
 
     if (cart.itemsCount === 0) {
       throw new BadRequestException('Cart is empty');
@@ -406,7 +384,7 @@ export class CartService {
       validationResults.errors.some((error) => error.includes('Price updated'))
     ) {
       await this.updateCartTotals(cart.id);
-      validationResults.updatedCart = await this.getOrCreateUserCart(userId);
+      validationResults.updatedCart = await this.getOrCreateUserCart(user);
     }
 
     return validationResults;
@@ -437,9 +415,9 @@ export class CartService {
   }
 
   // Get Cart Items Count (for badge)
-  async getCartItemsCount(userId: string): Promise<number> {
+  async getCartItemsCount(user: Pick<User, 'id'>): Promise<number> {
     const cart = await this.prismaClient.cart.findUnique({
-      where: { userId },
+      where: { userId: user.id },
       select: { itemsCount: true },
     });
 

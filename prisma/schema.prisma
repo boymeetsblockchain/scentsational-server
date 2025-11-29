@@ -307,21 +307,22 @@ model ProductCategory {
 }
 
 model ProductVariant {
-  id           String   @id @default(uuid()) @db.Uuid
-  productId    String   @db.Uuid
-  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  sku          String   @unique @db.VarChar(50)
-  name         String   @db.VarChar(100)
-  price        Decimal  @db.Decimal(10, 2)
-  comparePrice Decimal? @db.Decimal(10, 2)
-  costPrice    Decimal? @db.Decimal(10, 2)
-  quantity     Int      @default(0)
-  weight       Decimal? @db.Decimal(8, 2)
-  volume       Int?     @db.Integer
-  isActive     Boolean  @default(true)
-  sortOrder    Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String   @id @default(uuid()) @db.Uuid
+  productId     String   @db.Uuid
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku           String   @unique @db.VarChar(50)
+  name          String   @db.VarChar(100)
+  price         Decimal  @db.Decimal(10, 2)
+  comparePrice  Decimal? @db.Decimal(10, 2)
+  costPrice     Decimal? @db.Decimal(10, 2)
+  quantity      Int      @default(0)
+  weight        Decimal? @db.Decimal(8, 2)
+  trackQuantity Boolean  @default(true)
+  volume        Int?     @db.Integer
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Relations
   cartItems     CartItem[]
