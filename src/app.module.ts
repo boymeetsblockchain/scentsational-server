@@ -10,6 +10,7 @@ import { JwtStrategy } from './modules/global/strategies/jwt.strategy';
 import { ProductsModule } from './modules/products/products.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { CartModule } from './modules/cart/cart.module';
 
 function validate(config: Record<string, unknown>) {
   try {
@@ -35,6 +36,7 @@ function validate(config: Record<string, unknown>) {
     ProductsModule,
     UploadModule,
     CategoriesModule,
+    CartModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtStrategy],

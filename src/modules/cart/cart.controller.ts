@@ -16,7 +16,10 @@ import { Roles } from '../global/decorators/roles-decorator';
 import { Request } from 'express';
 import { AddToCartDto } from './dtos/cart.add.dto';
 import { UpdateCartItemDto } from './dtos/cart.update.dto';
+import { UserRole } from 'generated/prisma/enums';
+import { JwtGuard } from '../global/guards/jwt.guard';
 
+@UseGuards(JwtGuard)
 @Controller('cart')
 export class CartController {
   constructor(private readonly cartService: CartService) {}
