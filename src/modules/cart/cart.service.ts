@@ -102,15 +102,29 @@ export class CartService {
     }
 
     // Check if item already exists in cart
-    const existingItem = await this.prismaClient.cartItem.findUnique({
-      where: {
-        cartId_productId_variantId: {
+    let existingItem;
+
+    if (variantId) {
+      // If variantId is provided, use the composite key
+      existingItem = await this.prismaClient.cartItem.findUnique({
+        where: {
+          cartId_productId_variantId: {
+            cartId: cart.id,
+            productId,
+            variantId,
+          },
+        },
+      });
+    } else {
+      // If no variantId, search for items with null variantId
+      existingItem = await this.prismaClient.cartItem.findFirst({
+        where: {
           cartId: cart.id,
           productId,
-          variantId: variantId || '', // Use empty string for no variant
+          variantId: null,
         },
-      },
-    });
+      });
+    }
 
     if (existingItem) {
       // Update quantity if item exists
