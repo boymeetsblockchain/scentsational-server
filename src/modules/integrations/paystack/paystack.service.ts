@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import {
   initializeTransactionData,
   initializeTransactionResponse,
+  PaystackVerifyTransactionResponse,
 } from './dtos/paystack.dto';
 
 @Injectable()
@@ -39,7 +40,9 @@ export class PaystackService {
     }
   }
 
-  async verifyTransaction(reference: string): Promise<any> {
+  async verifyTransaction(
+    reference: string,
+  ): Promise<PaystackVerifyTransactionResponse> {
     if (!reference) {
       throw new BadRequestException('Transaction reference is required');
     }
