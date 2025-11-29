@@ -4,8 +4,9 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../global/prisma/prisma.service';
-import { AddToCartDto } from './dtos/add-to-cart.dto';
-import { UpdateCartItemDto } from './dtos/update-cart-item.dto';
+import { AddToCartDto } from './dtos/cart.add.dto';
+import { UpdateCartItemDto } from './dtos/cart.update.dto';
+import { ProductVariant } from 'generated/prisma/client';
 
 @Injectable()
 export class CartService {
@@ -90,7 +91,7 @@ export class CartService {
     let variant = null;
 
     if (variantId) {
-      variant = product.variants?.[0];
+      variant = product.variants?.[0] as unknown as ProductVariant;
       if (!variant) {
         throw new NotFoundException('Product variant not found');
       }
