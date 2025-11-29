@@ -24,6 +24,7 @@ import { OrderQueryDto } from './dtos/orders.query.dto';
 import { Roles } from '../global/decorators/roles-decorator';
 import { Request } from 'express';
 
+@UseGuards(JwtGuard)
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
@@ -32,6 +33,11 @@ export class OrdersController {
   async createOrder(@Req() req: Request, @Body() input: OrderCreateDto) {
     return await this.ordersService.createOrder(input, {
       id: req.user?.id!,
+      phoneCountryCode: req.user.phoneCountryCode,
+      phoneNumber: req.user.phoneNumber,
+      firstName: req.user.firstName || null,
+      lastName: req.user.lastName || null,
+      email: req.user.email,
     });
   }
 

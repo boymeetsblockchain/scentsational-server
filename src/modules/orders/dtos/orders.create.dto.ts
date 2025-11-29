@@ -50,32 +50,8 @@ export class OrderItemCreateDto {
 }
 
 export class OrderCreateDto {
-  @IsString()
-  userId: string;
-
   @IsEnum(PaymentMethod)
   paymentMethod: PaymentMethod;
-
-  // Customer information
-  @IsEmail()
-  customerEmail: string;
-
-  @IsString()
-  customerFirstName: string;
-
-  @IsString()
-  customerLastName: string;
-
-  @IsOptional()
-  @IsString()
-  customerPhone?: string;
-
-  // Shipping address (required)
-  @IsString()
-  shippingFirstName: string;
-
-  @IsString()
-  shippingLastName: string;
 
   @IsOptional()
   @IsString()

@@ -42,7 +42,18 @@ export class OrdersService {
   }
 
   // Create Order
-  async createOrder(input: OrderCreateDto, user: Pick<User, 'id'>) {
+  async createOrder(
+    input: OrderCreateDto,
+    user: Pick<
+      User,
+      | 'id'
+      | 'firstName'
+      | 'lastName'
+      | 'email'
+      | 'phoneCountryCode'
+      | 'phoneNumber'
+    >,
+  ) {
     // Validate billing address based on payment method
     if (this.requiresBillingAddress(input.paymentMethod)) {
       if (!input.billingAddressLine1 || !input.billingCity) {
@@ -71,7 +82,6 @@ export class OrdersService {
         orderNumber,
         userId: user.id!,
 
-        // Totals
         subtotal,
         discountAmount: input.discountAmount || 0,
         taxAmount: input.taxAmount || 0,
@@ -84,14 +94,14 @@ export class OrdersService {
         paymentMethod: input.paymentMethod,
 
         // Customer snapshot
-        customerEmail: input.customerEmail,
-        customerFirstName: input.customerFirstName,
-        customerLastName: input.customerLastName,
-        customerPhone: input.customerPhone,
+        customerEmail: user.email,
+        customerFirstName: user.firstName!,
+        customerLastName: user.lastName!,
+        customerPhone: user.phoneCountryCode + user.phoneNumber,
 
         // Shipping address (required)
-        shippingFirstName: input.shippingFirstName,
-        shippingLastName: input.shippingLastName,
+        shippingFirstName: user.firstName!,
+        shippingLastName: user.lastName!,
         shippingCompany: input.shippingCompany,
         shippingAddressLine1: input.shippingAddressLine1,
         shippingAddressLine2: input.shippingAddressLine2,
@@ -99,7 +109,8 @@ export class OrdersService {
         shippingState: input.shippingState,
         shippingPostalCode: input.shippingPostalCode,
         shippingCountry: input.shippingCountry,
-        shippingPhone: input.shippingPhone,
+        shippingPhone:
+          input.shippingPhone || user.phoneCountryCode + user.phoneNumber,
 
         // Billing address (optional)
         billingFirstName: input.billingFirstName,
