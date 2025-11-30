@@ -1,6 +1,7 @@
 export type initializeTransactionData = {
   amount: number;
   email: string;
+  metadata: Record<string, string>;
 };
 
 export type initializeTransactionResponse = {
