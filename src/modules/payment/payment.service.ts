@@ -20,10 +20,10 @@ export class PaymentService {
   ) {}
 
   // Initialize Payment with Paystack
-  async initializePayment(input: InitializePayment, user: Pick<User, 'email'>) {
+  async initializePayment(orderId: string, user: Pick<User, 'email'>) {
     // Verify order exists and get amount
     const order = await this.prismaClient.order.findUnique({
-      where: { id: input.orderId },
+      where: { id: orderId },
       select: {
         id: true,
         orderNumber: true,
@@ -74,7 +74,7 @@ export class PaymentService {
 
     // Update order payment status
     await this.prismaClient.order.update({
-      where: { id: input.orderId },
+      where: { id: orderId },
       data: { paymentStatus: PaymentStatus.PROCESSING },
     });
 
@@ -87,14 +87,14 @@ export class PaymentService {
   }
 
   // Verify Payment with Paystack
-  async verifyPayment(input: VerifyPayment) {
-    if (!input.paymentIntentId) {
+  async verifyPayment(paymentIntentId: string) {
+    if (!paymentIntentId) {
       throw new BadRequestException('Payment reference is required');
     }
 
     // Find payment record
     const payment = await this.prismaClient.payment.findFirst({
-      where: { paymentIntentId: input.paymentIntentId },
+      where: { paymentIntentId: paymentIntentId },
       include: {
         order: true,
       },
@@ -105,9 +105,8 @@ export class PaymentService {
     }
 
     // Verify payment with Paystack
-    const verification = await this.paystackService.verifyTransaction(
-      input.paymentIntentId,
-    );
+    const verification =
+      await this.paystackService.verifyTransaction(paymentIntentId);
 
     let paymentStatus: PaymentStatus;
     let failureReason: string | null = null;
