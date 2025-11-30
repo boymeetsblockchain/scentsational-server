@@ -23,6 +23,7 @@ import { OrderCreateDto } from './dtos/orders.create.dto';
 import { OrderQueryDto } from './dtos/orders.query.dto';
 import { Roles } from '../global/decorators/roles-decorator';
 import { Request } from 'express';
+import { OrdersUpdateShipping } from './dtos/orders.update-shipping-info';
 
 @UseGuards(JwtGuard)
 @Controller('orders')
@@ -112,14 +113,9 @@ export class OrdersController {
   @Roles(UserRole.ADMIN)
   async updateShippingInfo(
     @Param('id', ParseUUIDPipe) orderId: string,
-    @Body('trackingNumber') trackingNumber: string,
-    @Body('carrier') carrier: string,
+    @Body() input: OrdersUpdateShipping,
   ) {
-    return await this.ordersService.updateShippingInfo(
-      orderId,
-      trackingNumber,
-      carrier,
-    );
+    return await this.ordersService.updateShippingInfo(orderId, input);
   }
 
   // Mark order as delivered

@@ -12,6 +12,7 @@ import {
   PaymentMethod,
 } from 'generated/prisma/enums';
 import { User } from 'generated/prisma/client';
+import { OrdersUpdateShipping } from './dtos/orders.update-shipping-info';
 
 @Injectable()
 export class OrdersService {
@@ -393,11 +394,7 @@ export class OrdersService {
   }
 
   // Update Shipping Information
-  async updateShippingInfo(
-    orderId: string,
-    trackingNumber: string,
-    carrier: string,
-  ) {
+  async updateShippingInfo(orderId: string, input: OrdersUpdateShipping) {
     const order = await this.prismaClient.order.findUnique({
       where: { id: orderId },
     });
@@ -409,8 +406,8 @@ export class OrdersService {
     return this.prismaClient.order.update({
       where: { id: orderId },
       data: {
-        trackingNumber,
-        carrier,
+        trackingNumber: input.trackingNumber,
+        carrier: input.carrier,
         shippedAt: new Date(),
         status: OrderStatus.SHIPPED,
       },
