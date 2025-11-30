@@ -8,6 +8,8 @@ import { PaymentStatus, PaymentMethod } from 'generated/prisma/enums';
 import { PrismaService } from '../global/prisma/prisma.service';
 import { PaystackService } from '../integrations/paystack/paystack.service';
 import { CreateManualPaymentDto } from './dtos/payment.create-manual-payment.dto';
+import { InitializePayment } from './dtos/payment.initialize.dto';
+import { User } from 'generated/prisma/client';
 
 @Injectable()
 export class PaymentService {
@@ -17,10 +19,10 @@ export class PaymentService {
   ) {}
 
   // Initialize Payment with Paystack
-  async initializePayment(orderId: string, userEmail: string) {
+  async initializePayment(input: InitializePayment, user: Pick<User, 'email'>) {
     // Verify order exists and get amount
     const order = await this.prismaClient.order.findUnique({
-      where: { id: orderId },
+      where: { id: input.orderId },
       select: {
         id: true,
         orderNumber: true,
@@ -36,13 +38,15 @@ export class PaymentService {
 
     // Check if payment already exists and is completed
     if (order.paymentStatus === PaymentStatus.COMPLETED) {
-      throw new BadRequestException('Payment already completed for this order');
+      throw new BadRequestException(
+        'Payment already completed for this order, contact support',
+      );
     }
 
     // Initialize payment with Paystack
     const paystackResponse = await this.paystackService.initializeTransaction({
       amount: order.totalAmount.toNumber(),
-      email: userEmail,
+      email: user.email,
       metadata: {
         orderId: order.id,
         orderNumber: order.orderNumber,
@@ -54,7 +58,7 @@ export class PaymentService {
       data: {
         orderId: order.id,
         amount: order.totalAmount,
-        currency: 'USD',
+        currency: 'NGN',
         paymentMethod: order.paymentMethod,
         paymentIntentId: paystackResponse.data.reference,
         processor: 'paystack',
@@ -69,7 +73,7 @@ export class PaymentService {
 
     // Update order payment status
     await this.prismaClient.order.update({
-      where: { id: orderId },
+      where: { id: input.orderId },
       data: { paymentStatus: PaymentStatus.PROCESSING },
     });
 
