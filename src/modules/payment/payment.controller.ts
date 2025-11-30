@@ -61,7 +61,7 @@ export class PaymentController {
 
   // Get Order Payments
   @Get('orders/:orderId')
-  @UseGuards(JwtGuard)
+  @Roles(UserRole.ADMIN)
   async getOrderPayments(@Param('orderId', ParseUUIDPipe) orderId: string) {
     return await this.paymentService.getOrderPayments(orderId);
   }
