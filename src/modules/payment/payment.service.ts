@@ -10,6 +10,7 @@ import { PaystackService } from '../integrations/paystack/paystack.service';
 import { CreateManualPaymentDto } from './dtos/payment.create-manual-payment.dto';
 import { InitializePayment } from './dtos/payment.initialize.dto';
 import { User } from 'generated/prisma/client';
+import { VerifyPayment } from './dtos/payment.verify.dto';
 
 @Injectable()
 export class PaymentService {
@@ -86,14 +87,14 @@ export class PaymentService {
   }
 
   // Verify Payment with Paystack
-  async verifyPayment(paymentIntentId: string) {
-    if (!paymentIntentId) {
+  async verifyPayment(input: VerifyPayment) {
+    if (!input.paymentIntentId) {
       throw new BadRequestException('Payment reference is required');
     }
 
     // Find payment record
     const payment = await this.prismaClient.payment.findFirst({
-      where: { paymentIntentId },
+      where: { paymentIntentId: input.paymentIntentId },
       include: {
         order: true,
       },
@@ -104,8 +105,9 @@ export class PaymentService {
     }
 
     // Verify payment with Paystack
-    const verification =
-      await this.paystackService.verifyTransaction(paymentIntentId);
+    const verification = await this.paystackService.verifyTransaction(
+      input.paymentIntentId,
+    );
 
     let paymentStatus: PaymentStatus;
     let failureReason: string | null = null;
