@@ -140,8 +140,6 @@ export class OrdersController {
     return await this.ordersService.cancelOrder(orderId, reason);
   }
 
-  // 📊 Analytics & Reports
-
   // Get order statistics
   @Get('analytics/stats')
   @UseGuards(JwtGuard, RolesGuard)
