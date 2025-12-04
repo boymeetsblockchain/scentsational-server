@@ -13,6 +13,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { CartModule } from './modules/cart/cart.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentModule } from './modules/payment/payment.module';
+import { DiscountModule } from './modules/discount/discount.module';
 
 function validate(config: Record<string, unknown>) {
   try {
@@ -41,6 +42,7 @@ function validate(config: Record<string, unknown>) {
     CartModule,
     OrdersModule,
     PaymentModule,
+    DiscountModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtStrategy],
