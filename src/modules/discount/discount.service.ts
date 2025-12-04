@@ -3,12 +3,14 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../global/prisma/prisma.service';
 import { CreateDiscountDto } from './dtos/discount.create.dto';
 import { UpdateDiscountDto } from './dtos/discount.update.dto';
 import { ValidateDiscountDto } from './dtos/discount.validate.dto';
 import { DiscountValidationResultDto } from './dtos/discount.validation.result.dto';
-import { Discount } from 'generated/prisma/client';
+import { Discount, DiscountType, User } from 'generated/prisma/client';
+import { PrismaService } from '../global/prisma/prisma.service';
+import { ApplyDiscountDto } from './dtos/discount.apply.dto';
+import { DiscountQueryDto } from './dtos/discount.query.dto';
 
 @Injectable()
 export class DiscountService {
@@ -294,5 +296,135 @@ export class DiscountService {
       originalAmount: orderAmount,
       finalAmount: orderAmount - discountAmount,
     };
+  }
+
+  async getDiscountByCode(code: string) {
+    return await this.prismaClient.discount.findUnique({
+      where: { code },
+    });
+  }
+
+  async listDiscounts(filters: DiscountQueryDto) {
+    const { isActive, search, type, page = 1, limit = 20 } = filters;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (isActive !== undefined) {
+      where.isActive = isActive;
+    }
+
+    if (type) {
+      where.type = type as DiscountType;
+    }
+
+    if (search) {
+      where.OR = [
+        { code: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [discounts, total] = await Promise.all([
+      this.prismaClient.discount.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prismaClient.discount.count({ where }),
+    ]);
+
+    return {
+      discounts,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async applyDiscount(input: ApplyDiscountDto, user: Pick<User, 'id'>) {
+    // Check if discount exists and is still valid
+    const discount = await this.prismaClient.discount.findUnique({
+      where: { id: input.discountId },
+    });
+
+    if (!discount || !discount.isActive) {
+      throw new Error('Discount not available');
+    }
+
+    // Check if once per customer restriction applies
+    if (discount.oncePerCustomer) {
+      const existingUsage = await this.prismaClient.discountUsage.findFirst({
+        where: {
+          discountId: input.discountId,
+          userId: user.id,
+        },
+      });
+
+      if (existingUsage) {
+        throw new Error('Discount can only be used once per customer');
+      }
+    }
+
+    // Check customer eligibility
+    if (
+      discount.customerIds.length > 0 &&
+      !discount.customerIds.includes(user.id)
+    ) {
+      throw new Error('Discount not available for this customer');
+    }
+
+    // Check usage limit
+    if (discount.usageLimit && discount.usedCount >= discount.usageLimit) {
+      throw new Error('Discount usage limit reached');
+    }
+
+    // Start transaction
+    return await this.prismaClient.$transaction(async (tx) => {
+      // Record discount usage
+      const discountUsage = await tx.discountUsage.create({
+        data: {
+          discountId: input.discountId,
+          userId: user.id,
+          orderId: input.orderId,
+          productId: input.productId,
+        },
+      });
+
+      // Increment discount usage count
+      await tx.discount.update({
+        where: { id: input.discountId },
+        data: {
+          usedCount: {
+            increment: 1,
+          },
+        },
+      });
+
+      return discountUsage;
+    });
+  }
+
+  async deactivateDiscount(id: string) {
+    return await this.prismaClient.discount.update({
+      where: { id },
+      data: { isActive: false },
+    });
+  }
+
+  // Reactivate discount
+  async reactivateDiscount(id: string) {
+    return await this.prismaClient.discount.update({
+      where: { id },
+      data: { isActive: true },
+    });
+  }
+
+  async deleteDiscount(id: string) {
+    return await this.deactivateDiscount(id);
   }
 }
