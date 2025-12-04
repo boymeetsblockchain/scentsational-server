@@ -237,10 +237,10 @@ export class DiscountService {
 
   async validateDiscount(
     input: ValidateDiscountDto,
+    user: Pick<User, 'id'>,
   ): Promise<DiscountValidationResultDto> {
     const {
       discountCode,
-      userId,
       orderAmount = 0,
       productIds = [],
       categoryIds = [],
@@ -274,7 +274,7 @@ export class DiscountService {
     // Validate discount rules
     const validation = await this.validateDiscountRules(
       discount,
-      userId,
+      user.id,
       orderAmount,
       productIds,
       categoryIds,
